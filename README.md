@@ -1,2 +1,1 @@
-# shutit-openshift-origin
-Shutit-Based Origin Standup in Docker
+unduly: description of module directory in here
