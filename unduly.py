@@ -57,8 +57,8 @@ class unduly(ShutItModule):
 		# shutit.set_password(password, user='')
 		#                                    - Set password for a given user on target
 		# Clean up brutally:
-		shutit.send('''docker ps -a | grep openshift-origin | awk '{print $1}' | xargs docker rm -f''')
-		shutit.send('''docker ps -a | grep k8 | awk '{print $1}' | xargs docker rm -f''')
+		shutit.send('''docker ps -a | grep openshift-origin | awk '{print $1}' | xargs --no-run-if-empty docker rm -f''')
+		shutit.send('''docker ps -a | grep k8 | awk '{print $1}' | xargs --no-run-if-empty docker rm -f''')
 		shutit.send('sh <(curl https://raw.githubusercontent.com/openshift/origin/master/examples/sample-app/pullimages.sh)')
 		#shutit.send('docker run -d --name "openshift-origin" --net=host --privileged -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/openshift:/var/lib/openshift openshift/origin start')
 		shutit.send('docker run -d --name "openshift-origin" --net=host --privileged -v /var/run/docker.sock:/var/run/docker.sock openshift/origin start')
@@ -84,6 +84,12 @@ class unduly(ShutItModule):
 		shutit.send('sleep 30')
 		shutit.send('osc build-logs ruby-sample-build-1')
 		shutit.send('''echo navigate to: http://$(osc get service | awk '{print $4 $5}') ''')
+		shutit.send('git clone https://github.com/openshift/training.git')
+		shutit.send('cd training/beta3')
+		shutit.send('sh ./basicauthurl.sh')
+		shutit.pause_point('')
+		shutit.send('osc create -f basicauthurl.json')
+		shutit.send('osc start-build basicauthurl-build')
 		# osc project default - to see default project
 		shutit.logout()
 		return True
