@@ -56,6 +56,7 @@ class unduly(ShutItModule):
 		# shutit.package_installed(package)  - Returns True if the package exists on the target
 		# shutit.set_password(password, user='')
 		#                                    - Set password for a given user on target
+
 		# Clean up brutally:
 		shutit.send('''docker ps -a | grep openshift-origin | awk '{print $1}' | xargs --no-run-if-empty docker rm -f''')
 		shutit.send('''docker ps -a | grep k8 | awk '{print $1}' | xargs --no-run-if-empty docker rm -f''')
@@ -70,11 +71,6 @@ class unduly(ShutItModule):
 		shutit.send('export CURL_CA_BUNDLE=`pwd`/openshift.local.config/master/ca.crt #see here: https://github.com/openshift/origin/blob/master/examples/sample-app/README.md#application-build-deploy-and-update-flow, step 3')
 		shutit.send('sleep 30')
 		shutit.send('osadm registry --create --credentials="${OPENSHIFTCONFIG}"')
-		shutit.send('wget https://raw.githubusercontent.com/openshift/training/master/beta3/openldap-example.json')
-		shutit.send('osc create -f openldap-example.json')
-		shutit.send('sleep 30')
-		shutit.install('openldap-clients')
-		shutit.send('''ldapsearch -D 'cn=Manager,dc=example,dc=com' -b "dc=example,dc=com"            -s sub "(objectclass=*)" -w redhat            -h `osc get services | grep openldap-example-service | awk '{print $4}'`''')
 		shutit.send('osc describe service docker-registry --config=openshift.local.config/master/admin.kubeconfig')
 		shutit.send('osadm policy add-role-to-user view test-admin --config=openshift.local.config/master/admin.kubeconfig')
 		shutit.multisend('osc login --certificate-authority=openshift.local.config/master/ca.crt',{'assword':'any','sername':'test-admin'})
@@ -84,12 +80,18 @@ class unduly(ShutItModule):
 		shutit.send('sleep 30')
 		shutit.send('osc build-logs ruby-sample-build-1')
 		shutit.send('''echo navigate to: http://$(osc get service | awk '{print $4 $5}') ''')
+		# auth
+		shutit.send('osc project default')
+		shutit.send('wget https://raw.githubusercontent.com/openshift/training/master/beta3/openldap-example.json')
+		shutit.send('osc create -f openldap-example.json')
+		shutit.send('sleep 30')
+		shutit.install('openldap-clients')
+		shutit.send('''ldapsearch -D 'cn=Manager,dc=example,dc=com' -b "dc=example,dc=com"            -s sub "(objectclass=*)" -w redhat            -h `osc get services | grep openldap-example-service | awk '{print $4}'`''')
 		shutit.send('git clone https://github.com/openshift/training.git')
 		shutit.send('cd training/beta3')
 		shutit.send('sh ./basicauthurl.sh')
-		shutit.pause_point('')
 		shutit.send('osc create -f basicauthurl.json')
-		shutit.send('osc start-build basicauthurl-build')
+		#shutit.send('osc start-build basicauthurl-build')
 		# osc project default - to see default project
 		shutit.logout()
 		return True
