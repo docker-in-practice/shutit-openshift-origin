@@ -81,6 +81,7 @@ class unduly(ShutItModule):
 		shutit.send('sleep 30')
 		service = shutit.send_and_get_output("""osc get service | awk '{print $4 $5}'""")
 		shutit.log('''Navigate to: http://''' + service,add_final_message=True)
+		shutit.send('oc create -f <(curl -k https://raw.githubusercontent.com/openshift/origin/master/examples/image-streams/image-streams-centos7.json)')
 		## auth
 		#shutit.send('osc project default')
 		#shutit.send('wget https://raw.githubusercontent.com/openshift/training/master/beta3/openldap-example.json')
