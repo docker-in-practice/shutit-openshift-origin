@@ -1,1 +1,1 @@
-unduly: description of module directory in here
+coreos_vagrant: description of module directory in here
