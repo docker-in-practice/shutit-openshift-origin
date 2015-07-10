@@ -1,1 +1,4 @@
-coreos_vagrant: description of module directory in here
+
+
+
+A managed set-up of an OpenShift cluster in Vagrant on your machine.
