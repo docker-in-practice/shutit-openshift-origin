@@ -82,12 +82,10 @@ class openshift_vagrant(ShutItModule):
 			shutit.send('rm /tmp/vagrant.deb')
 			shutit.send('mkdir -p ' + vagrant_dir)
 			shutit.send('cd ' + vagrant_dir)
+		shutit.send('cd')
 		if not shutit.file_exists('origin',directory=True):
-			shutit.send('cd')
-			shutit.send('rm -rf origin')
 			shutit.send('git clone https://github.com/openshift/origin')
 			shutit.send('cd origin')
-			pwd=shutit.send_and_get_output('pwd')
 			shutit.send('vagrant origin-init --stage inst --os fedora openshift')
 			shutit.replace_text('  "dev_cluster": true,','.vagrant-openshift.json','dev_cluster')
 			shutit.replace_text('  "rebuild_yum_cache": true,','.vagrant-openshift.json','rebuild_yum_cache')
@@ -145,10 +143,14 @@ class openshift_vagrant(ShutItModule):
 			shutit.logout()
 		else:
 			shutit.send('cd origin')
-			pwd=shutit.send_and_get_output('pwd')
 			shutit.send('git pull')
 			if shutit.send_and_match_output('vagrant status',['.*poweroff.*','.*not created.*','.*aborted.*']):
-				shutit.send('vagrant up')
+				if not shutit.get_input('Do you want me to start up the existing instance or destroy it?',boolean=True):
+					shutit.send('vagrant up')
+				else:
+					shutit.multisend('vagrant destroy',{'yN':'y'})
+					self.build(shutit)
+					return
 			if not shutit.send_and_match_output('vagrant status','.*running.*'):
 				shutit.fail('Seems already set up - to destroy run "vagrant destroy" and re-run this script')
 		return True
