@@ -68,7 +68,7 @@ class openshift_vagrant(ShutItModule):
 		if shutit.send_and_get_output('''VBoxManage list runningvms | grep openshift-vagrant | grep -v 'not created' | awk '{print $1}' ''') != '':
 			if shutit.get_input('Clean up your VMs first, as there appears to be a running openshift-vagrant VM in existence. Want me to clean them up for you?',boolean=True):
 				shutit.multisend('(cd openshift-vagrant && vagrant destroy)',{'y/N':'y'})
-		for c in ('virtualbox','git','curl','go'):
+		for c in ('git','curl','go'):
 			if not shutit.command_available(c):
 				if c == 'go':
 					c = 'golang'
@@ -76,13 +76,6 @@ class openshift_vagrant(ShutItModule):
 					pw = shutit.get_input('Please input your sudo password in case it is needed.',ispass=True)
 					command = shutit.get_input('Please input your install command, eg "apt-get install -y", or "yum install -y"')
 					shutit.multisend('sudo ' + command + ' ' + c,{'assword':pw})
-		if not shutit.command_available('vagrant'):
-			shutit.send('wget -qO- https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.deb > /tmp/vagrant.deb',note='Downloading vagrant and installing')
-			shutit.send('dpkg -i /tmp/vagrant.deb')
-			shutit.send('rm /tmp/vagrant.deb')
-			shutit.send('mkdir -p ' + vagrant_dir)
-			shutit.send('cd ' + vagrant_dir)
-		shutit.send('cd')
 		if not shutit.file_exists('origin',directory=True):
 			shutit.send('git clone https://github.com/ianmiell/origin')
 			shutit.send('cd origin')
@@ -93,28 +86,53 @@ class openshift_vagrant(ShutItModule):
 			shutit.send('vagrant box remove fedora_deps',check_exit=False)
 			shutit.send('vagrant up')
 			shutit.login(command='vagrant ssh master')
+			shutit.login(command='sudo su')
 			shutit.send('yum makecache fast')
-			shutit.send('sudo yum update -y')
+			shutit.send('yum update -y')
 			shutit.send('mkdir -p /data/src/github.com/openshift/')
 			shutit.send('cd /data/src/github.com/openshift/')
 			shutit.send('git clone https://github.com/ianmiell/origin')
 			shutit.send('docker pull openshift/origin-base')
+			# http://nareshv.blogspot.co.uk/2013/08/installing-dockerio-on-centos-64-64-bit.html
+			shutit.send('pkill docker')
+			shutit.send('iptables -t nat -F')
+			shutit.send('ifconfig docker0 down')
+			shutit.send('brctl delbr docker0')
+			shutit.send('service docker stop')
+			shutit.send('service docker start')
+			shutit.logout()
 			shutit.logout()
 			shutit.login(command='vagrant ssh minion-1')
+			shutit.login(command='sudo su')
 			shutit.send('yum makecache fast')
-			shutit.send('sudo yum update -y')
+			shutit.send('yum update -y')
 			shutit.send('mkdir -p /data/src/github.com/openshift/')
 			shutit.send('cd /data/src/github.com/openshift/')
 			shutit.send('git clone https://github.com/ianmiell/origin')
 			shutit.send('docker pull openshift/origin-base')
+			shutit.send('pkill docker')
+			shutit.send('iptables -t nat -F')
+			shutit.send('ifconfig docker0 down')
+			shutit.send('brctl delbr docker0')
+			shutit.send('service docker stop')
+			shutit.send('service docker start')
+			shutit.logout()
 			shutit.logout()
 			shutit.login(command='vagrant ssh minion-2')
+			shutit.login(command='sudo su')
 			shutit.send('yum makecache fast')
-			shutit.send('sudo yum update -y')
+			shutit.send('yum update -y')
 			shutit.send('mkdir -p /data/src/github.com/openshift/')
 			shutit.send('cd /data/src/github.com/openshift/')
 			shutit.send('git clone https://github.com/ianmiell/origin')
 			shutit.send('docker pull openshift/origin-base')
+			shutit.send('pkill docker')
+			shutit.send('iptables -t nat -F')
+			shutit.send('ifconfig docker0 down')
+			shutit.send('brctl delbr docker0')
+			shutit.send('service docker stop')
+			shutit.send('service docker start')
+			shutit.logout()
 			shutit.logout()
 			#shutit.send('mkdir -p /data/src/github.com/openshift/')
 			#shutit.send('cd /data/src/github.com/openshift/')
@@ -191,6 +209,6 @@ def module():
 		description='',
 		maintainer='',
 		delivery_methods = ('bash'),
-		depends=['shutit.tk.setup']
+		depends=['shutit.tk.setup','tk.shutit.vagrant.vagrant.vagrant']
 	)
 
