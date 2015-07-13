@@ -93,7 +93,7 @@ class openshift_vagrant(ShutItModule):
 		if not shutit.file_exists('origin',directory=True):
 			shutit.send('git clone https://github.com/ianmiell/origin')
 			shutit.send('cd origin')
-			shutit.send('vagrant origin-init --stage inst --os rhel7 openshift')
+			shutit.send('vagrant origin-init --stage inst --os fedora openshift')
 			if shutit.cfg[self.module_id]['dev_cluster']:
 				shutit.replace_text('  "dev_cluster": true,','.vagrant-openshift.json','dev_cluster')
 			else:
