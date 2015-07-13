@@ -66,7 +66,7 @@ class openshift_vagrant(ShutItModule):
 				shutit.fail('insufficient memory')
 		if shutit.send_and_get_output('''VBoxManage list runningvms | grep openshift-vagrant | grep -v 'not created' | awk '{print $1}' ''') != '':
 			if shutit.get_input('Clean up your VMs first, as there appears to be a running openshift-vagrant VM in existence. Want me to clean them up for you?',boolean=True):
-				shutit.multisend('(cd openshift-vagrant && vagrant destroy)',{'y/N':'y'})
+				shutit.multisend('vagrant destroy',{'y/N':'y'})
 		for c in ('git','curl','go'):
 			if not shutit.command_available(c):
 				if c == 'go':
