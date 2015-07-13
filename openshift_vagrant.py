@@ -68,22 +68,15 @@ class openshift_vagrant(ShutItModule):
 			if shutit.get_input('Clean up your VMs first, as there appears to be a running openshift-vagrant VM in existence. Want me to clean them up for you?',boolean=True):
 				shutit.multisend('vagrant destroy',{'y/N':'y'})
 		whoami = shutit.whoami()
-		if whoami != 'root':
-			pw = shutit.get_input('Please input your sudo password in case it is needed.',ispass=True)
-		else:
-			pw = ''
 		for c in ('git','curl','go','ruby'):
 			if not shutit.command_available(c):
-				if c == 'go':
-					c = 'golang'
-				if shutit.get_input(c + ' apparently not installed. Would you like me to install it for you?',boolean=True):
-					command = shutit.get_input('Please input your install command, eg "apt-get install -y", or "yum install -y"')
-					shutit.multisend('sudo ' + command + ' ' + c,{'assword':pw})
+				shutit.install(c)
 		shutit.send('cd')
 		if not shutit.file_exists('vagrant-openshift'):
 			shutit.send('git clone https://github.com/openshift/vagrant-openshift')
 			shutit.send('cd vagrant-openshift')
 			if whoami != 'root':
+				pw = shutit.get_env_pass(shutit.whoami())
 				shutit.multisend('sudo gem install bundle',{'assword':pw})
 				shutit.multisend('sudo /usr/local/bin/bundle',{'assword':pw})
 				shutit.multisend('sudo rake',{'assword':pw})
