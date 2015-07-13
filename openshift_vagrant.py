@@ -76,7 +76,7 @@ class openshift_vagrant(ShutItModule):
 			shutit.send('git clone https://github.com/openshift/vagrant-openshift')
 			shutit.send('cd vagrant-openshift')
 			if whoami != 'root':
-				pw = shutit.get_env_pass(shutit.whoami())
+				pw = shutit.get_env_pass(shutit.whoami(),'Input password if it is needed for sudo. Just hit return if you do not want to input password.')
 				shutit.multisend('sudo gem install bundle',{'assword':pw})
 				shutit.multisend('sudo /usr/local/bin/bundle',{'assword':pw})
 				shutit.multisend('sudo rake',{'assword':pw})
