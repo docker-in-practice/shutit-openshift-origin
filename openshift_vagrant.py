@@ -72,7 +72,7 @@ class openshift_vagrant(ShutItModule):
 			pw = shutit.get_input('Please input your sudo password in case it is needed.',ispass=True)
 		else:
 			pw = ''
-		for c in ('git','curl','go','rubygems'):
+		for c in ('git','curl','go','ruby'):
 			if not shutit.command_available(c):
 				if c == 'go':
 					c = 'golang'
