@@ -1,2 +1,2 @@
 #!/bin/bash
-shutit build -d bash -m /space/git/shutit-library/vagrant
+shutit build -d bash -m shutit-library/vagrant
