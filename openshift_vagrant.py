@@ -72,25 +72,25 @@ class openshift_vagrant(ShutItModule):
 			pw = shutit.get_input('Please input your sudo password in case it is needed.',ispass=True)
 		else:
 			pw = ''
-		for c in ('git','curl','go','bundler'):
+		for c in ('git','curl','go','rubygems'):
 			if not shutit.command_available(c):
 				if c == 'go':
 					c = 'golang'
 				if shutit.get_input(c + ' apparently not installed. Would you like me to install it for you?',boolean=True):
 					command = shutit.get_input('Please input your install command, eg "apt-get install -y", or "yum install -y"')
 					shutit.multisend('sudo ' + command + ' ' + c,{'assword':pw})
-		#TODO: vagrant-openshift - bundle and rake passwords
 		shutit.send('cd')
 		if not shutit.file_exists('vagrant-openshift'):
 			shutit.send('git clone https://github.com/openshift/vagrant-openshift')
 			shutit.send('cd vagrant-openshift')
 			if whoami != 'root':
-				shutit.multisend('sudo bundle',{'assword':pw})
+				shutit.multisend('sudo gem install bundle',{'assword':pw})
+				shutit.multisend('sudo /usr/local/bin/bundle',{'assword':pw})
 				shutit.multisend('sudo rake',{'assword':pw})
 			else:
-				shutit.send('bundle')
+				shutit.send('gem install bundle')
+				shutit.send('/usr/local/bin/bundle')
 				shutit.send('rake')
-			shutit.send('vagrant plugin install vagrant-openshift')
 		else:
 			shutit.send('cd vagrant-openshift')
 			shutit.send('git pull')
@@ -99,6 +99,7 @@ class openshift_vagrant(ShutItModule):
 			shutit.send('git clone https://github.com/ianmiell/origin')
 			shutit.send('cd origin')
 			shutit.send('vagrant origin-init --stage inst --os fedora openshift')
+			shutit.send('mkdir -p src')
 			if shutit.cfg[self.module_id]['dev_cluster']:
 				shutit.replace_text('  "dev_cluster": true,','.vagrant-openshift.json','dev_cluster')
 			else:
