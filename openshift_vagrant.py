@@ -64,7 +64,6 @@ class openshift_vagrant(ShutItModule):
 		if memavail < 3500:
 			if not shutit.get_input('Memory available appears to be: ' + str(memavail) + 'kB, need 3500kB available to run.\nIf you want to continue, input "y", else "n"',boolean=True):
 				shutit.fail('insufficient memory')
-		shutit.send('cd')
 		if shutit.send_and_get_output('''VBoxManage list runningvms | grep openshift-vagrant | grep -v 'not created' | awk '{print $1}' ''') != '':
 			if shutit.get_input('Clean up your VMs first, as there appears to be a running openshift-vagrant VM in existence. Want me to clean them up for you?',boolean=True):
 				shutit.multisend('(cd openshift-vagrant && vagrant destroy)',{'y/N':'y'})
@@ -77,7 +76,20 @@ class openshift_vagrant(ShutItModule):
 					command = shutit.get_input('Please input your install command, eg "apt-get install -y", or "yum install -y"')
 					shutit.multisend('sudo ' + command + ' ' + c,{'assword':pw})
 		#TODO: vagrant-openshift
-		shutit.send('git clone https://github.com/openshift/vagrant-openshift')
+		shutit.send('cd')
+		if not shutit.file_exists('vagrant-openshift'):
+			shutit.send('git clone https://github.com/openshift/vagrant-openshift')
+			shutit.send('cd vagrant-openshift')
+			shutit.send('bundle')
+			shutit.send('rake')
+			shutit.send('vagrant plugin install vagrant-openshift')
+		else:
+			shutit.send('cd vagrant-openshift')
+			shutit.send('git pull')
+			shutit.send('bundle')
+			shutit.send('rake')
+			shutit.send('vagrant plugin install vagrant-openshift')
+		shutit.send('cd')
 		if not shutit.file_exists('origin',directory=True):
 			shutit.send('git clone https://github.com/ianmiell/origin')
 			shutit.send('cd origin')
