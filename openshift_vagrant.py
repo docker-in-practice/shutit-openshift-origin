@@ -84,13 +84,6 @@ class openshift_vagrant(ShutItModule):
 		if not shutit.file_exists('vagrant-openshift'):
 			shutit.send('git clone https://github.com/openshift/vagrant-openshift')
 			shutit.send('cd vagrant-openshift')
-			if whoami == 'root':
-			shutit.send('bundle')
-			shutit.send('rake')
-			shutit.send('vagrant plugin install vagrant-openshift')
-		else:
-			shutit.send('cd vagrant-openshift')
-			shutit.send('git pull')
 			if whoami != 'root':
 				shutit.multisend('sudo bundle',{'assword':pw})
 				shutit.multisend('sudo rake',{'assword':pw})
@@ -98,6 +91,9 @@ class openshift_vagrant(ShutItModule):
 				shutit.send('bundle')
 				shutit.send('rake')
 			shutit.send('vagrant plugin install vagrant-openshift')
+		else:
+			shutit.send('cd vagrant-openshift')
+			shutit.send('git pull')
 		shutit.send('cd')
 		if not shutit.file_exists('origin',directory=True):
 			shutit.send('git clone https://github.com/ianmiell/origin')
