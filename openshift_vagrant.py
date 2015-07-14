@@ -92,14 +92,6 @@ class openshift_vagrant(ShutItModule):
 			shutit.send('git clone https://github.com/ianmiell/origin')
 			shutit.send('cd origin')
 			shutit.send('vagrant origin-init --stage inst --os fedora openshift')
-			shutit.send('mkdir -p src')
-			if shutit.cfg[self.module_id]['dev_cluster']:
-				shutit.replace_text('  "dev_cluster": true,','.vagrant-openshift.json','dev_cluster')
-			else:
-				shutit.replace_text('  "dev_cluster": false,','.vagrant-openshift.json','dev_cluster')
-			#shutit.replace_text('  "rebuild_yum_cache": true,','.vagrant-openshift.json','rebuild_yum_cache')
-			shutit.send('vagrant box remove fedora_inst',check_exit=False)
-			shutit.send('vagrant box remove fedora_deps',check_exit=False)
 			shutit.send('vagrant up')
 			self._build_openshift(shutit)
 		else:
@@ -219,7 +211,13 @@ class openshift_vagrant(ShutItModule):
 		else:
 			shutit.login(command='vagrant ssh openshiftdev')
 		shutit.login(command='sudo su')
+		shutit.pause_point('openshift?')
+		shutit.login(command='sudo su')
 		shutit.send('service openshift start')
+		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/oc')
+		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/osadm')
+		shutit.send('yum -y groups install "KDE Plasma Workspaces"')
+		shutit.send('startx')
 		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig')
 		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig')
 		shutit.send('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG')
@@ -237,7 +235,6 @@ class openshift_vagrant(ShutItModule):
 		#                                      and reference in your code with:
 		# shutit.cfg[self.module_id]['myconfig']
 		shutit.get_config(self.module_id, 'vagrant_dir', '/tmp/vagrant_dir')
-		shutit.get_config(self.module_id, 'dev_cluster', boolean=True)
 		return True
 
 	def test(self, shutit):
