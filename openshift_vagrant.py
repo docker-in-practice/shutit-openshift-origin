@@ -68,38 +68,15 @@ class openshift_vagrant(ShutItModule):
 			if shutit.get_input('Clean up your VMs first, as there appears to be a running openshift-vagrant VM in existence. Want me to clean them up for you?',boolean=True):
 				shutit.multisend('vagrant destroy',{'y/N':'y'})
 		whoami = shutit.whoami()
-		for c in ('git','curl','go','ruby-dev'):
+		for c in ('git'):
 			if not shutit.command_available(c):
 				shutit.install(c)
 		shutit.send('cd')
-		if not shutit.file_exists('vagrant-openshift'):
-			shutit.send('git clone https://github.com/openshift/vagrant-openshift')
-			shutit.send('cd vagrant-openshift')
-			if whoami != 'root':
-				pw = shutit.get_env_pass(shutit.whoami(),'Input password if it is needed for sudo. Just hit return if you do not want to input password.')
-				shutit.multisend('sudo gem install bundle',{'assword':pw})
-				shutit.multisend('sudo /usr/local/bin/bundle',{'assword':pw})
-				shutit.multisend('sudo rake',{'assword':pw})
-			else:
-				shutit.send('gem install bundle')
-				shutit.send('/usr/local/bin/bundle')
-				shutit.send('rake')
-		else:
-			shutit.send('cd vagrant-openshift')
-			shutit.send('git pull')
-		shutit.send('cd')
 		if not shutit.file_exists('origin',directory=True):
-			shutit.send('git clone https://github.com/ianmiell/origin')
+			shutit.send('git clone https://github.com/openshift/origin')
 			shutit.send('cd origin')
 			shutit.send('vagrant origin-init --stage inst --os fedora openshift')
 			shutit.send('mkdir -p src')
-			if shutit.cfg[self.module_id]['dev_cluster']:
-				shutit.replace_text('  "dev_cluster": true,','.vagrant-openshift.json','dev_cluster')
-			else:
-				shutit.replace_text('  "dev_cluster": false,','.vagrant-openshift.json','dev_cluster')
-			#shutit.replace_text('  "rebuild_yum_cache": true,','.vagrant-openshift.json','rebuild_yum_cache')
-			shutit.send('vagrant box remove fedora_inst',check_exit=False)
-			shutit.send('vagrant box remove fedora_deps',check_exit=False)
 			shutit.send('vagrant up')
 			self._build_openshift(shutit)
 		else:
@@ -131,93 +108,7 @@ class openshift_vagrant(ShutItModule):
 		return True
 
 	def _build_openshift(self,shutit):
-		#if shutit.cfg[self.module_id]['dev_cluster']:
-		#	shutit.login(command='vagrant ssh master')
-		#else:
-		#	shutit.login(command='vagrant ssh openshiftdev')
-		#shutit.login(command='sudo su')
-		#shutit.send('yum makecache fast')
-		#shutit.send('yum update -y')
-		#shutit.send('mkdir -p /data/src/github.com/openshift/')
-		#shutit.send('cd /data/src/github.com/openshift/')
-		#if shutit.cfg[self.module_id]['dev_cluster']:
-		#	shutit.send('git clone https://github.com/ianmiell/origin')
-		#shutit.send('docker pull openshift/origin-base')
-		#shutit.send('docker pull openshift/origin-haproxy-router-base')
-		#shutit.send('docker pull openshift/origin-release')
-		#shutit.send('docker pull docker.io/openshift/origin-base')
-		#shutit.send('docker pull docker.io/centos')
-		#shutit.send('docker pull openshift/origin-keepalived-ipfailover')
-		# http://nareshv.blogspot.co.uk/2013/08/installing-dockerio-on-centos-64-64-bit.html
-		#shutit.send('pkill docker')
-		#shutit.send('iptables -t nat -F')
-		#shutit.send('ifconfig docker0 down')
-		#shutit.send('brctl delbr docker0')
-		#shutit.send('service docker start')
-		#shutit.send('cd /data/src/github.com/openshift/origin')
-		#shutit.send('make')
-		#shutit.logout()
-		#shutit.logout()
-		#if shutit.cfg[self.module_id]['dev_cluster']:
-		#	shutit.login(command='vagrant ssh minion-1')
-		#	shutit.login(command='sudo su')
-			#shutit.send('yum makecache fast')
-			#shutit.send('sudo yum update -y')
-			#shutit.send('mkdir -p /data/src/github.com/openshift/')
-			#shutit.send('cd /data/src/github.com/openshift/')
-			#shutit.send('git clone https://github.com/ianmiell/origin')
-			#shutit.send('docker pull openshift/origin-base')
-			#shutit.send('docker pull openshift/origin-haproxy-router-base')
-			#shutit.send('docker pull openshift/origin-release')
-			#shutit.send('docker pull docker.io/openshift/origin-base')
-			#shutit.send('docker pull docker.io/centos')
-			#shutit.send('docker pull openshift/origin-keepalived-ipfailover')
-			# http://nareshv.blogspot.co.uk/2013/08/installing-dockerio-on-centos-64-64-bit.html
-			#shutit.send('pkill docker')
-			#shutit.send('iptables -t nat -F')
-			#shutit.send('ifconfig lbr0 down')
-			##shutit.send('brctl delbr br0')
-			#shutit.send('service docker start')
-			#shutit.send('cd /data/src/github.com/openshift/origin')
-			#shutit.send('make')
-		#	shutit.logout()
-		#	shutit.logout()
-		#if shutit.cfg[self.module_id]['dev_cluster']:
-			#shutit.login(command='vagrant ssh minion-2')
-			#shutit.login(command='sudo su')
-			#shutit.send('yum makecache fast')
-			#shutit.send('yum update -y')
-			#shutit.send('mkdir -p /data/src/github.com/openshift/')
-			#shutit.send('cd /data/src/github.com/openshift/')
-			#shutit.send('git clone https://github.com/ianmiell/origin')
-			#shutit.send('docker pull openshift/origin-base')
-			#shutit.send('docker pull openshift/origin-haproxy-router-base')
-			#shutit.send('docker pull openshift/origin-release')
-			#shutit.send('docker pull docker.io/openshift/origin-base')
-			#shutit.send('docker pull docker.io/centos')
-			#shutit.send('docker pull openshift/origin-keepalived-ipfailover')
-			# http://nareshv.blogspot.co.uk/2013/08/installing-dockerio-on-centos-64-64-bit.html
-			#shutit.send('pkill docker')
-			#shutit.send('iptables -t nat -F')
-			#shutit.send('ifconfig lbr0 down')
-			##shutit.send('brctl delbr lbr0')
-			#shutit.send('service docker start')
-			#shutit.send('cd /data/src/github.com/openshift/origin')
-			#shutit.send('make')
-			#shutit.logout()
-			#shutit.logout()
-		shutit.send('vagrant build-openshift-base')
-		shutit.send('vagrant build-openshift-base-images')
-		shutit.send('vagrant build-openshift --images')
-		shutit.send('vagrant install-openshift-assets-base')
-		shutit.send('vagrant install-openshift')
-		# pick up updates if older "deps" base reused
-		shutit.send('vagrant build-openshift-base-images')
-		shutit.send('vagrant build-openshift --images')
-		if shutit.cfg[self.module_id]['dev_cluster']:
-			shutit.login(command='vagrant ssh master')
-		else:
-			shutit.login(command='vagrant ssh openshiftdev')
+		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su')
 		shutit.send('service openshift start')
 		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig')
