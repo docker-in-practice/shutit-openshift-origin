@@ -75,12 +75,14 @@ class openshift_vagrant(ShutItModule):
 		if not shutit.file_exists('origin',directory=True):
 			shutit.send('git clone https://github.com/openshift/origin')
 			shutit.send('cd origin')
+			shutit.insert_text('      v.gui = true','Vagrantfile','config.vm.provider "virtualbox"')
+			shutit.replace_text('''    "memory"            => ENV['OPENSHIFT_MEMORY'] || 2048,''','Vagrantfile',"""    "memory"            => ENV.'OPENSHIFT_MEMORY'""")
 			shutit.send('vagrant up')
 			self._build_openshift(shutit)
 		else:
 			shutit.send('cd origin')
 			shutit.send('git pull')
-			if shutit.send_and_match_output('vagrant status',['.*poweroff.*','.*not created.*','.*aborted.*']):
+			if shutit.send_and_match_output('vagrant status',['.*saved.*','.*poweroff.*','.*not created.*','.*aborted.*']):
 				if shutit.get_input('Do you want me to start up the existing instance (y) or destroy it (n)?',boolean=True):
 					shutit.send('vagrant up')
 					self._build_openshift(shutit)
@@ -109,13 +111,15 @@ class openshift_vagrant(ShutItModule):
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su')
 		shutit.pause_point('openshift build?')
+		shutit.send('cd /data/src/github.com/openshift/origin/')
+		shutit.send('./hack/build-release.sh')
 		shutit.send('service openshift start')
 		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/oc')
 		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/osadm')
 		shutit.send('yum -y groups install "KDE Plasma Workspaces"')
 		shutit.send('startx')
-		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig')
-		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig')
+		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig',note='Set the kubeconfig to the admin user')
+		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig','Use the registry kubeconfig')
 		shutit.send('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG')
 		shutit.send('oadm router main-router --replicas=1 --credentials="$KUBECONFIG"')
 		shutit.logout()
