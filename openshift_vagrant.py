@@ -68,14 +68,13 @@ class openshift_vagrant(ShutItModule):
 			if shutit.get_input('Clean up your VMs first, as there appears to be a running openshift-vagrant VM in existence. Want me to clean them up for you?',boolean=True):
 				shutit.multisend('vagrant destroy',{'y/N':'y'})
 		whoami = shutit.whoami()
-		for c in ('git'):
+		for c in ('git',):
 			if not shutit.command_available(c):
 				shutit.install(c)
 		shutit.send('cd')
 		if not shutit.file_exists('origin',directory=True):
 			shutit.send('git clone https://github.com/openshift/origin')
 			shutit.send('cd origin')
-			shutit.send('vagrant origin-init --stage inst --os fedora openshift')
 			shutit.send('vagrant up')
 			self._build_openshift(shutit)
 		else:
@@ -109,8 +108,7 @@ class openshift_vagrant(ShutItModule):
 	def _build_openshift(self,shutit):
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su')
-		shutit.pause_point('openshift?')
-		shutit.login(command='sudo su')
+		shutit.pause_point('openshift build?')
 		shutit.send('service openshift start')
 		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/oc')
 		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/osadm')
