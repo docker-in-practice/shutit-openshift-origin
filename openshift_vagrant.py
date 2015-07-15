@@ -68,7 +68,7 @@ class openshift_vagrant(ShutItModule):
 			if shutit.get_input('Clean up your VMs first, as there appears to be a running openshift-vagrant VM in existence. Want me to clean them up for you?',boolean=True):
 				shutit.multisend('vagrant destroy',{'y/N':'y'})
 		whoami = shutit.whoami()
-		for c in ('git'):
+		for c in ('git',):
 			if not shutit.command_available(c):
 				shutit.install(c)
 		shutit.send('cd')
