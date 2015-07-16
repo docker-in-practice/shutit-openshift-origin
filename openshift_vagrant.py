@@ -109,23 +109,22 @@ class openshift_vagrant(ShutItModule):
 		shutit.send('oadm router main-router --replicas=1 --credentials="$KUBECONFIG"',note='Set up router')
 		shutit.send('cd examples/data-population')
 		shutit.send('./populate.sh')
-		# populate.sh makes this redundant?
-		#shutit.send('oc create -f examples/image-streams/image-streams-centos7.json -n openshift',note='centos7 image streams')
-		#shutit.send('oc create -f examples/db-templates -n openshift',note='db templates')
-		## Enterprise version only
-		##shutit.send('oc create -f examples/quickstart-templates -n openshift',note='core quickstart templates')
-		##shutit.send('oc create -f examples/xpaas-streams/jboss-image-streams.json -n openshift',note='eap image streams')
-		##shutit.send('oc create -f examples/xpaas-templates -n openshift','eap templates')
 		shutit.send('yum -y groups install "KDE Plasma Workspaces"')
 		shutit.send('nohup startx &')
-		shutit.log('Now:\n1) Go to https://localhost:8443\n2) Set up a project with the mysql\n3) Connect to the mysql service with the mysql -hIP -uUSERNAME -pPASSWORD  ',add_final_message=True)
+		#shutit.log('Now:\n1) Go to https://localhost:8443\n2) Set up a project with the mysql\n3) Connect to the mysql service with the mysql -hIP -uUSERNAME -pPASSWORD  ',add_final_message=True)
+		shutit.log('',add_final_message=True)
 		shutit.logout()
 		shutit.logout()
+		pwd = shutit.send_and_get_output('pwd')
+		shutit.log('To continue work on this image\n    cd ' + pwd + '\n    vagrant up',add_final_message=True)
 
 	def _take_snapshot(self,shutit):
 		shutit.get_env_pass(shutit.whoami(),'')
-		shutit.multisend('vagrant plugin install vagrant-vbox-snapshot',{'assword':pw})
-		shutit.send('vagrant snapshot take openshift_1')
+		shutit.multisend('sudo vagrant plugin install vagrant-vbox-snapshot',{'assword':pw})
+		snapshot_name = self.cfg['build']['build_id']
+		shutit.send('vagrant snapshot take openshift_' + snapshot_name)
+		shutit.log('Vagrant snapshot taken: ' + snapshot_name, add_final_message=True)
+		
 
 
 	def get_config(self, shutit):
