@@ -84,7 +84,7 @@ class openshift_vagrant(ShutItModule):
 				if not shutit.send_and_match_output('vagrant status',['.*running.*']) and shutit.get_input('A vagrant setup already exists here. Do you want me to start up the existing instance (y) or destroy it (n)?',boolean=True):
 					shutit.send('vagrant up')
 					self._build_openshift(shutit)
-				else:
+				elif not shutit.send_and_match_output('vagrant status',['.*running.*']):
 					shutit.send('vagrant destroy -f')
 					shutit.send('cd ..')
 					shutit.send('rm -rf origin')
@@ -101,8 +101,6 @@ class openshift_vagrant(ShutItModule):
 		shutit.send('cd /data/src/github.com/openshift/origin/')
 		shutit.send('./hack/build-release.sh')
 		shutit.send('service openshift start')
-		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/oc')
-		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/osadm')
 		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig',note='Set the kubeconfig to the admin user')
 		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig',note='Use the registry kubeconfig')
 		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG','invalid',note='Set up registry',not_there=True)
@@ -119,9 +117,11 @@ class openshift_vagrant(ShutItModule):
 		shutit.log('To continue work on this image\n    cd ' + pwd + '\n    vagrant up',add_final_message=True)
 
 	def _take_snapshot(self,shutit):
-		shutit.get_env_pass(shutit.whoami(),'')
-		shutit.multisend('sudo vagrant plugin install vagrant-vbox-snapshot',{'assword':pw})
-		snapshot_name = self.cfg['build']['build_id']
+		if not shutit.send_and_match_output('vagrant plugin list','vagrant-vbox-snapshot'):
+			cmd = 'sudo vagrant plugin install vagrant-vbox-snapshot'
+			pw = shutit.get_env_pass(shutit.whoami(),'Input your sudo password for the command: ' + cmd)
+			shutit.multisend(cmd,{'assword':pw})
+		snapshot_name = shutit.cfg['build']['build_id']
 		shutit.send('vagrant snapshot take openshift_' + snapshot_name)
 		shutit.log('Vagrant snapshot taken: ' + snapshot_name, add_final_message=True)
 		
