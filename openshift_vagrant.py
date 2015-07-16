@@ -105,7 +105,7 @@ class openshift_vagrant(ShutItModule):
 		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/osadm')
 		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig',note='Set the kubeconfig to the admin user')
 		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig',note='Use the registry kubeconfig')
-		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG',note='Set up registry','invalid',not_there=True)
+		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG','invalid',note='Set up registry',not_there=True)
 		shutit.send('oadm router main-router --replicas=1 --credentials="$KUBECONFIG"',note='Set up router')
 		shutit.send('cd examples/data-population')
 		shutit.send('./populate.sh')
