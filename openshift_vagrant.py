@@ -59,45 +59,32 @@ class openshift_vagrant(ShutItModule):
 		# shutit.package_installed(package)  - Returns True if the package exists on the target
 		# shutit.set_password(password, user='')
 		#                                    - Set password for a given user on target
-		vagrant_dir = shutit.cfg[self.module_id]['vagrant_dir']
-		memavail = shutit.get_memory()
-		if memavail < 3500:
-			if not shutit.get_input('Memory available appears to be: ' + str(memavail) + 'kB, need 3500kB available to run.\nIf you want to continue, input "y", else "n"',boolean=True):
-				shutit.fail('insufficient memory')
-		if shutit.send_and_get_output('''VBoxManage list runningvms | grep openshift-vagrant | grep -v 'not created' | awk '{print $1}' ''') != '':
-			if shutit.get_input('Clean up your VMs first, as there appears to be a running openshift-vagrant VM in existence. Want me to clean them up for you?',boolean=True):
-				shutit.multisend('vagrant destroy',{'y/N':'y'})
+		mem_needed = int(shutit.cfg[self.module_id]['mem_needed'])
 		whoami = shutit.whoami()
 		for c in ('git',):
 			if not shutit.command_available(c):
 				shutit.install(c)
 		shutit.send('cd')
 		if not shutit.file_exists('origin',directory=True):
-			shutit.send('git clone https://github.com/openshift/origin')
+			shutit.send('git clone https://github.com/openshift/origin -b ' + shutit.cfg[self.module_id]['version'])
 			shutit.send('cd origin')
 			shutit.insert_text('      v.gui = true','Vagrantfile','config.vm.provider "virtualbox"')
 			shutit.replace_text('''    "memory"            => ENV['OPENSHIFT_MEMORY'] || 2048,''','Vagrantfile',"""    "memory"            => ENV.'OPENSHIFT_MEMORY'""")
+			memavail = shutit.get_memory()
+			if memavail < mem_needed * 1000:
+				if not shutit.get_input('Memory available appears to be: ' + str(memavail) + 'kB, need ' + str(mem_needed * 1000) + 'kB available to run.\nIf you want to continue, input "y", else "n"',boolean=True):
+					shutit.fail('insufficient memory')
+			name = 'origin_openshiftdev_'
 			shutit.send('vagrant up')
 			self._build_openshift(shutit)
 		else:
 			shutit.send('cd origin')
-			shutit.send('git pull')
-			if shutit.send_and_match_output('vagrant status',['.*saved.*','.*poweroff.*','.*not created.*','.*aborted.*']):
-				if shutit.get_input('Do you want me to start up the existing instance (y) or destroy it (n)?',boolean=True):
+			shutit.send('git pull origin v1.0.1')
+			if shutit.send_and_match_output('vagrant status',['.*running.*','.*saved.*','.*poweroff.*','.*not created.*','.*aborted.*']):
+				if not shutit.send_and_match_output('vagrant status',['.*running.*']) and shutit.get_input('A vagrant setup already exists here. Do you want me to start up the existing instance (y) or destroy it (n)?',boolean=True):
 					shutit.send('vagrant up')
 					self._build_openshift(shutit)
 				else:
-					shutit.send('vagrant destroy -f')
-					shutit.send('cd ..')
-					shutit.send('rm -rf origin')
-					self.build(shutit)
-					return True
-			elif shutit.send_and_match_output('vagrant status','.*running.*'):
-				if shutit.get_input('Do you want me to start up the existing instance (y), or destroy and start again (n)?',boolean=True):
-					shutit.send('vagrant up')
-					self._build_openshift(shutit)
-				else:
-					shutit.send('vagrant halt')
 					shutit.send('vagrant destroy -f')
 					shutit.send('cd ..')
 					shutit.send('rm -rf origin')
@@ -105,6 +92,7 @@ class openshift_vagrant(ShutItModule):
 					return True
 			else:
 				shutit.fail('should not get here')
+		self._take_snapshot(shutit)
 		return True
 
 	def _build_openshift(self,shutit):
@@ -116,20 +104,28 @@ class openshift_vagrant(ShutItModule):
 		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/oc')
 		shutit.send('ln -s /data/src/github.com/openshift/origin/_output/local/go/bin/openshift /bin/osadm')
 		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig',note='Set the kubeconfig to the admin user')
-		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig','Use the registry kubeconfig')
-		shutit.send('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG',note='Set up registry')
+		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig',note='Use the registry kubeconfig')
+		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG',note='Set up registry','invalid',not_there=True)
 		shutit.send('oadm router main-router --replicas=1 --credentials="$KUBECONFIG"',note='Set up router')
-		shutit.send('oc create -f examples/image-streams/image-streams-centos7.json -n openshift',note='centos7 image streams')
-		shutit.send('oc create -f examples/db-templates -n openshift',note='db templates')
-		# Enterprise version only
-		#shutit.send('oc create -f examples/quickstart-templates -n openshift',note='core quickstart templates')
-		#shutit.send('oc create -f examples/xpaas-streams/jboss-image-streams.json -n openshift',note='eap image streams')
-		#shutit.send('oc create -f examples/xpaas-templates -n openshift','eap templates')
+		shutit.send('cd examples/data-population')
+		shutit.send('./populate.sh')
+		# populate.sh makes this redundant?
+		#shutit.send('oc create -f examples/image-streams/image-streams-centos7.json -n openshift',note='centos7 image streams')
+		#shutit.send('oc create -f examples/db-templates -n openshift',note='db templates')
+		## Enterprise version only
+		##shutit.send('oc create -f examples/quickstart-templates -n openshift',note='core quickstart templates')
+		##shutit.send('oc create -f examples/xpaas-streams/jboss-image-streams.json -n openshift',note='eap image streams')
+		##shutit.send('oc create -f examples/xpaas-templates -n openshift','eap templates')
 		shutit.send('yum -y groups install "KDE Plasma Workspaces"')
 		shutit.send('nohup startx &')
-		shutit.log('Now:\n1) Go to https://localhost:8443\n2) Set up a project with the mysql\n3) Connect to the mysql service with the mysql -hIP -uUSERNAME -pPASSWORD  ',add_final_message=False) -
+		shutit.log('Now:\n1) Go to https://localhost:8443\n2) Set up a project with the mysql\n3) Connect to the mysql service with the mysql -hIP -uUSERNAME -pPASSWORD  ',add_final_message=True)
 		shutit.logout()
 		shutit.logout()
+
+	def _take_snapshot(self,shutit):
+		shutit.get_env_pass(shutit.whoami(),'')
+		shutit.multisend('vagrant plugin install vagrant-vbox-snapshot',{'assword':pw})
+		shutit.send('vagrant snapshot take openshift_1')
 
 
 	def get_config(self, shutit):
@@ -140,7 +136,8 @@ class openshift_vagrant(ShutItModule):
 		# shutit.get_config(self.module_id, 'myconfig', default='a value')
 		#                                      and reference in your code with:
 		# shutit.cfg[self.module_id]['myconfig']
-		shutit.get_config(self.module_id, 'vagrant_dir', '/tmp/vagrant_dir')
+		shutit.get_config(self.module_id, 'mem_needed', '2048', hint='Amount of memory for machine in MB')
+		shutit.get_config(self.module_id, 'version', 'v1.0.1', hint='Version of origin')
 		return True
 
 	def test(self, shutit):
