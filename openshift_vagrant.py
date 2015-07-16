@@ -114,7 +114,7 @@ class openshift_vagrant(ShutItModule):
 		shutit.logout()
 		shutit.logout()
 		pwd = shutit.send_and_get_output('pwd')
-		shutit.log('To continue work on this image\n    cd ' + pwd + '\n    vagrant up',add_final_message=True)
+		shutit.log('To work on this image from the last point\n    cd ' + pwd + '\n    vagrant snapshot back\nand wait a while before using\n\nIf you want to save state:\n    cd ' + pwd + '\n    vagrant snapshot take <name>',add_final_message=True)
 
 	def _take_snapshot(self,shutit):
 		if not shutit.send_and_match_output('vagrant plugin list','vagrant-vbox-snapshot'):
