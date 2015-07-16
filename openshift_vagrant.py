@@ -106,7 +106,7 @@ class openshift_vagrant(ShutItModule):
 		shutit.send('service openshift start')
 		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig',note='Set the kubeconfig to the admin user')
 		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig',note='Use the registry kubeconfig')
-		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG','error:',note='Set up registry',not_there=True)
+		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG','services/docker-registry',note='Set up registry')
 		shutit.send('oadm router main-router --replicas=1 --credentials="$KUBECONFIG"',note='Set up router')
 		shutit.send('cd examples/data-population')
 		shutit.send('./populate.sh')
