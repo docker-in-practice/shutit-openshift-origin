@@ -81,7 +81,10 @@ class openshift_vagrant(ShutItModule):
 			shutit.send('cd origin')
 			shutit.send('git pull origin v1.0.1')
 			if shutit.send_and_match_output('vagrant status',['.*running.*','.*saved.*','.*poweroff.*','.*not created.*','.*aborted.*']):
-				if not shutit.send_and_match_output('vagrant status',['.*running.*']) and shutit.get_input('A vagrant setup already exists here. Do you want me to start up the existing instance (y) or destroy it (n)?',boolean=True):
+				if not shutit.send_and_match_output('vagrant status',['.*running.*','.*not created.*']) and shutit.get_input('A vagrant setup already exists here. Do you want me to start up the existing instance (y) or destroy it (n)?',boolean=True):
+					shutit.send('vagrant up')
+					self._build_openshift(shutit)
+				elif not shutit.send_and_match_output('vagrant status',['.*not created.*']):
 					shutit.send('vagrant up')
 					self._build_openshift(shutit)
 				elif not shutit.send_and_match_output('vagrant status',['.*running.*']):
@@ -103,7 +106,7 @@ class openshift_vagrant(ShutItModule):
 		shutit.send('service openshift start')
 		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig',note='Set the kubeconfig to the admin user')
 		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig',note='Use the registry kubeconfig')
-		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG','invalid',note='Set up registry',not_there=True)
+		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG','services/docker-registry',note='Set up registry')
 		shutit.send('oadm router main-router --replicas=1 --credentials="$KUBECONFIG"',note='Set up router')
 		shutit.send('cd examples/data-population')
 		shutit.send('./populate.sh')
@@ -114,7 +117,7 @@ class openshift_vagrant(ShutItModule):
 		shutit.logout()
 		shutit.logout()
 		pwd = shutit.send_and_get_output('pwd')
-		shutit.log('To continue work on this image\n    cd ' + pwd + '\n    vagrant up',add_final_message=True)
+		shutit.log('To work on this image from the last point\n    cd ' + pwd + '\n    vagrant snapshot back\nand wait a while before using\n\nIf you want to save state:\n    cd ' + pwd + '\n    vagrant snapshot take <name>',add_final_message=True)
 
 	def _take_snapshot(self,shutit):
 		if not shutit.send_and_match_output('vagrant plugin list','vagrant-vbox-snapshot'):
