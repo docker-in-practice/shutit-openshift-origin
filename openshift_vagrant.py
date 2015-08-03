@@ -93,6 +93,8 @@ class openshift_vagrant(ShutItModule):
 					shutit.send('rm -rf origin')
 					self.build(shutit)
 					return True
+				elif shutit.send_and_match_output('vagrant status',['.*not created.*']):
+					return True
 			else:
 				shutit.fail('should not get here')
 		self._take_snapshot(shutit)
