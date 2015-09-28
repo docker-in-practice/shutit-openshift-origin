@@ -143,7 +143,7 @@ class openshift_vagrant(ShutItModule):
 		#                                      and reference in your code with:
 		# shutit.cfg[self.module_id]['myconfig']
 		shutit.get_config(self.module_id, 'mem_needed', '2048', hint='Amount of memory for machine in MB')
-		shutit.get_config(self.module_id, 'version', 'v1.0.6', hint='Version of origin')
+		shutit.get_config(self.module_id, 'version', 'v1.0.1', hint='Version of origin')
 		return True
 
 	def test(self, shutit):
