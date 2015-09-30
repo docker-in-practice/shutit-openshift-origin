@@ -70,6 +70,10 @@ class openshift_vagrant(ShutItModule):
 			shutit.send('cd origin')
 			shutit.insert_text('      v.gui = true','Vagrantfile','config.vm.provider "virtualbox"')
 			shutit.replace_text('''    "memory"            => ENV['OPENSHIFT_MEMORY'] || 2048,''','Vagrantfile',"""    "memory"            => ENV.'OPENSHIFT_MEMORY'""")
+			shutit.replace_text("""        config.vm.network "forwarded_port", guest: 80, host: 1080, auto_correct: true""",'Vagrantfile','''        config.vm.network "forwarded_port", guest: 80, host: 1080''')
+			shutit.replace_text("""        config.vm.network "forwarded_port", guest: 443, host: 1443, auto_correct: true""",'Vagrantfile','''        config.vm.network "forwarded_port", guest: 443, host: 1443''')
+			shutit.replace_text("""        config.vm.network "forwarded_port", guest: 8080, host: 8080, auto_correct: true""",'Vagrantfile','''        config.vm.network "forwarded_port", guest: 8080, host: 8080''')
+			shutit.replace_text("""        config.vm.network "forwarded_port", guest: 8443, host: 8443, auto_correct: true""",'Vagrantfile','''        config.vm.network "forwarded_port", guest: 8443, host: 8443''')
 			memavail = shutit.get_memory()
 			if memavail < mem_needed * 1000:
 				if not shutit.get_input('Memory available appears to be: ' + str(memavail) + 'kB, need ' + str(mem_needed * 1000) + 'kB available to run.\nIf you want to continue, input "y", else "n"',boolean=True):
@@ -79,20 +83,20 @@ class openshift_vagrant(ShutItModule):
 			self._build_openshift(shutit)
 		else:
 			shutit.send('cd origin')
-			shutit.send('git pull origin v1.0.1')
+			shutit.send('git pull origin ' + shutit.cfg[self.module_id]['version'],timeout=20)
 			if shutit.send_and_match_output('vagrant status',['.*running.*','.*saved.*','.*poweroff.*','.*not created.*','.*aborted.*']):
-				if not shutit.send_and_match_output('vagrant status',['.*running.*','.*not created.*']) and shutit.get_input('A vagrant setup already exists here. Do you want me to start up the existing instance (y) or destroy it (n)?',boolean=True):
-					shutit.send('vagrant up')
-					self._build_openshift(shutit)
-				elif not shutit.send_and_match_output('vagrant status',['.*not created.*']):
-					shutit.send('vagrant up')
-					self._build_openshift(shutit)
-				elif not shutit.send_and_match_output('vagrant status',['.*running.*']):
+				keep = shutit.get_input('A vagrant setup already exists here. Do you want me to start up the existing instance (y) or destroy it (n)?',boolean=True)
+				if not keep or shutit.send_and_match_output('vagrant status',['.*not created.*','.*aborted.*']):
 					shutit.send('vagrant destroy -f')
 					shutit.send('cd ..')
 					shutit.send('rm -rf origin')
 					self.build(shutit)
 					return True
+				if shutit.send_and_match_output('vagrant status',['.*running.*','.*saved.*','.*poweroff.*']):
+					shutit.send('vagrant up')
+					self._build_openshift(shutit)
+				else:
+					shutit.fail('should not get here')
 			else:
 				shutit.fail('should not get here')
 		self._take_snapshot(shutit)
@@ -106,9 +110,10 @@ class openshift_vagrant(ShutItModule):
 		shutit.send('service openshift start')
 		shutit.send('export KUBECONFIG=/openshift.local.config/master/admin.kubeconfig',note='Set the kubeconfig to the admin user')
 		shutit.send('export REGISTRYCONFIG=/openshift.local.config/master/openshift-registry.kubeconfig',note='Use the registry kubeconfig')
-		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG','services/docker-registry',note='Set up registry')
+		shutit.send_until('oadm registry --config=$KUBECONFIG --credentials=$REGISTRYCONFIG',['service exists','services/docker-registry'],note='Set up registry')
 		shutit.send('oadm router main-router --replicas=1 --credentials="$KUBECONFIG"',note='Set up router')
 		shutit.send('cd examples/data-population')
+		shutit.send('cp /data/src/github.com/openshift/origin/_output/local/go/bin/* /usr/bin',note='Copy the binaries to the VM')
 		shutit.send('./populate.sh')
 		shutit.send('yum -y groups install "KDE Plasma Workspaces"')
 		shutit.send('nohup startx &')
@@ -139,7 +144,7 @@ class openshift_vagrant(ShutItModule):
 		#                                      and reference in your code with:
 		# shutit.cfg[self.module_id]['myconfig']
 		shutit.get_config(self.module_id, 'mem_needed', '2048', hint='Amount of memory for machine in MB')
-		shutit.get_config(self.module_id, 'version', 'v1.0.1', hint='Version of origin')
+		shutit.get_config(self.module_id, 'version', 'v1.0.3', hint='Version of origin')
 		return True
 
 	def test(self, shutit):
